@@ -1,22 +1,32 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Amazon;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 
+[DynamoDBTable("Users")]
 public class User {
-	public string name { get; set; }
-	public string team { get; set; }
-	public List<string> specialty { get; set; }
-	public List<string> hackathons { get; set; }
-	public Location location {get; set; }
-	public string idea { get; set; }
+	[DynamoDBHashKey]
+	public string Name { get; set; }
+	[DynamoDBProperty]
+	public string Team { get; set; }
+	[DynamoDBProperty("Specialty")]
+	public List<string> Specialty { get; set; }
+	[DynamoDBProperty("Hackathons")]
+	public List<string> Hackathons { get; set; }
+	[DynamoDBProperty]
+	public Location Location {get; set; }
+	[DynamoDBProperty]
+	public string Idea { get; set; }
 	public User(string name, string team, List<string> specialty,
 		List<string> hackathons, Location location, string idea) {
-		this.name = name;
-		this.team = team;
-		this.specialty = specialty;
-		this.hackathons = hackathons;
-		this.location = location;
-		this.idea = idea;
+		this.Name = name;
+		this.Team = team;
+		this.Specialty = specialty;
+		this.Hackathons = hackathons;
+		this.Location = location;
+		this.Idea = idea;
 	}
 }
 

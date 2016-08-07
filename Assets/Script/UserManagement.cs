@@ -3,7 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-
+using Amazon.CognitoIdentity;
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.Model;
 public class UserManagement : MonoBehaviour {
 
 	public User currentUser;
@@ -14,18 +18,34 @@ public class UserManagement : MonoBehaviour {
 	string[] hackathons = { "HackDuke", "HackPSU", "HackTheNorth", "Hack The Planet" };
 	// Use this for initialization
 	void Start () {
+		var credentials = new CognitoAWSCredentials("arn:aws:dynamodb:us-west-2:456798324465:table/Users, RegionEndpoint.USWest1");
+		AmazonDynamoDBClient client = new AmazonDynamoDBClient(credentials);
+		DynamoDBContext context = new DynamoDBContext(client);
+
+		var scanRequest = new ScanRequest {
+			TableName = "Users"
+		};
+
+		var response = client.ScanAsync (scanRequest, (results) => {
+			foreach(Dictionary<string, AttributeValue> item in results.Response.Items.
+				Where(x=> x["Name"].Equals(currentUser.Name)==false)) {
+				var doc = Document.FromAttributeMap(item);
+				var myUser = context.FromDocument<User>(doc);
+				otherUsers.Add(myUser);
+			}
+		});
 		createCurrentUser ();
 		createTestUsers ();
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		foreach(User user in otherUsers.Where(x=> GameObject.Find(x.name) == null)) {
+		foreach(User user in otherUsers.Where(x=> GameObject.Find(x.Name) == null && x.Hackathons.Intersect(currentUser.Hackathons).Count()!=0)) {
 			GameObject g = GameObject.CreatePrimitive (PrimitiveType.Sphere);
-			g.name = user.name;
+			g.name = user.Name;
 			g.transform.parent = currentObject.transform;
-			var latDiff = (currentUser.location.latitude - user.location.latitude);
-			var longDiff = (currentUser.location.longitude - user.location.longitude);
+			var latDiff = (currentUser.Location.latitude - user.Location.latitude);
+			var longDiff = (currentUser.Location.longitude - user.Location.longitude);
 			var yOffset = latDiff * 111111;
 			var xOffset = longDiff * 111111 * Mathf.Cos ((float)latDiff);
 			Vector3 position = new Vector3 ((float)xOffset, 0, (float)yOffset);
@@ -38,7 +58,7 @@ public class UserManagement : MonoBehaviour {
 	void createTestUsers() {
 		int number = UnityEngine.Random.Range (1, 10);
 		var random = new System.Random ();
-		var currentUserLocation = currentUser.location;
+		var currentUserLocation = currentUser.Location;
 		for (int i = 0; i < number; i++) {
 			var yChange = UnityEngine.Random.Range (0, .01f);
 			var xChange = UnityEngine.Random.Range (0, .01f);
